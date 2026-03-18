@@ -19,6 +19,8 @@ AUTH_PROVIDER_BASE_URL=http://localhost:9999
 AUTH_PROVIDER_LOGIN_PATH=/login
 AUTH_PROVIDER_REFRESH_PATH=/refresh
 AUTH_TOKEN_REFRESH_BUFFER_SECONDS=60
+USERS_API_BASE_URL=http://localhost:5454
+USERS_API_PATH=/users
 ```
 
 Você pode gerar um secret com:
@@ -47,3 +49,9 @@ bun run dev
 - Se o refresh falhar, a sessao e invalidada e o usuario volta para login.
 
 As regras de autenticacao ficam no arquivo `auth.ts`.
+
+## Dashboard de usuarios
+
+- A pagina de dashboard chama a API configurada em `USERS_API_BASE_URL + USERS_API_PATH`.
+- O token da sessao e enviado no header `Authorization: Bearer <accessToken>`.
+- O resultado e exibido em uma grade paginada com 20 registros por pagina.
