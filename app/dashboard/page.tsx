@@ -1,5 +1,6 @@
 import { auth, signOut } from "@/auth";
 import ActiveSearch from "./active-search";
+import UserActionsMenu from "./user-actions-menu";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -254,6 +255,28 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
           <>
             <ActiveSearch initialQuery={query} />
 
+            <div className="dashboard-pagination">
+              {currentPage > 1 ? (
+                <Link href={buildPageHref(currentPage - 1)} className="pagination-link">
+                  Anterior
+                </Link>
+              ) : (
+                <span className="pagination-link disabled">Anterior</span>
+              )}
+
+              <span className="pagination-info">
+                Pagina {currentPage} de {totalPages}
+              </span>
+
+              {currentPage < totalPages ? (
+                <Link href={buildPageHref(currentPage + 1)} className="pagination-link">
+                  Proxima
+                </Link>
+              ) : (
+                <span className="pagination-link disabled">Proxima</span>
+              )}
+            </div>
+
             <div className="dashboard-table-wrapper">
               <table className="dashboard-table">
                 <thead>
@@ -262,6 +285,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
                     <th>Sobrenome</th>
                     <th>Login</th>
                     <th>Status</th>
+                    <th></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -279,12 +303,15 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
                             {user.enabled ? "Ativo" : "Inativo"}
                           </span>
                         </td>
+                        <td className="user-actions-cell">
+                          <UserActionsMenu username={user.username || user.displayName} enabled={user.enabled} />
+                        </td>
                       </tr>
                       );
                     })
                   ) : (
                     <tr>
-                      <td colSpan={4} className="dashboard-empty-state">
+                      <td colSpan={5} className="dashboard-empty-state">
                         {query
                           ? "Nenhum usuario encontrado para o filtro informado."
                           : "Nenhum usuario retornado pela API."}
