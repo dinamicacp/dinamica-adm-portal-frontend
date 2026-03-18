@@ -10,11 +10,20 @@ type UserActionsMenuProps = {
 };
 
 type MenuPosition = { top: number; right: number };
+type Feedback = {
+  type: "success" | "error";
+  message: string;
+};
 
 export default function UserActionsMenu({ username, enabled }: UserActionsMenuProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submittingLabel, setSubmittingLabel] = useState("Atualizando status do usuario...");
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [menuPos, setMenuPos] = useState<MenuPosition | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -30,11 +39,24 @@ export default function UserActionsMenu({ username, enabled }: UserActionsMenuPr
     }
   }, [isSubmitting]);
 
+  useEffect(() => {
+    if (!feedback) {
+      return;
+    }
+
+    const timeout = setTimeout(() => {
+      setFeedback(null);
+    }, 2800);
+
+    return () => clearTimeout(timeout);
+  }, [feedback]);
+
   async function handleToggleStatus() {
     if (!username || isSubmitting) {
       return;
     }
 
+    setSubmittingLabel("Atualizando status do usuario...");
     setIsSubmitting(true);
 
     try {
@@ -60,10 +82,82 @@ export default function UserActionsMenu({ username, enabled }: UserActionsMenuPr
       }
 
       setOpen(false);
-      router.refresh();
+      setFeedback({
+        type: "success",
+        message: enabled ? "Usuario bloqueado com sucesso." : "Usuario desbloqueado com sucesso.",
+      });
+      setTimeout(() => {
+        router.refresh();
+      }, 700);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Erro ao atualizar status";
-      window.alert(message);
+      setFeedback({ type: "error", message });
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  function openPasswordModal() {
+    setOpen(false);
+    setPasswordError(null);
+    setNewPassword("");
+    setShowPasswordModal(true);
+  }
+
+  function closePasswordModal() {
+    if (isSubmitting) {
+      return;
+    }
+
+    setShowPasswordModal(false);
+    setPasswordError(null);
+    setNewPassword("");
+  }
+
+  async function handleChangePassword() {
+    const normalizedPassword = newPassword.trim();
+
+    if (normalizedPassword.length < 3) {
+      setPasswordError("A nova senha deve ter pelo menos 3 caracteres.");
+      return;
+    }
+
+    if (!username || isSubmitting) {
+      return;
+    }
+
+    setPasswordError(null);
+    setSubmittingLabel("Alterando senha do usuario...");
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch(`/api/users/${encodeURIComponent(username)}/password`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ password: normalizedPassword }),
+      });
+
+      if (!response.ok) {
+        const errorPayload: unknown = await response.json().catch(() => null);
+        const errorMessage =
+          typeof errorPayload === "object" &&
+          errorPayload !== null &&
+          "error" in errorPayload &&
+          typeof errorPayload.error === "string"
+            ? errorPayload.error
+            : "Nao foi possivel trocar a senha do usuario";
+
+        throw new Error(errorMessage);
+      }
+
+      setShowPasswordModal(false);
+      setNewPassword("");
+      setFeedback({ type: "success", message: "Senha alterada com sucesso." });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Erro ao trocar senha";
+      setPasswordError(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -133,7 +227,7 @@ export default function UserActionsMenu({ username, enabled }: UserActionsMenuPr
             <div className="dashboard-blocking-overlay" role="status" aria-live="polite">
               <div className="dashboard-blocking-card">
                 <span className="dashboard-blocking-spinner" aria-hidden="true" />
-                <span>Atualizando status do usuario...</span>
+                <span>{submittingLabel}</span>
               </div>
             </div>,
             document.body,
@@ -162,10 +256,71 @@ export default function UserActionsMenu({ username, enabled }: UserActionsMenuPr
                 className="user-actions-item"
                 role="menuitem"
                 type="button"
-                onClick={() => setOpen(false)}
+                disabled={isSubmitting || !username}
+                onClick={openPasswordModal}
               >
                 Trocar senha
               </button>
+            </div>,
+            document.body,
+          )
+        : null}
+
+      {showPasswordModal
+        ? createPortal(
+            <div className="dashboard-modal-overlay" role="dialog" aria-modal="true" aria-label="Trocar senha">
+              <div className="dashboard-modal-card">
+                <h3 className="dashboard-modal-title">Trocar senha</h3>
+                <p className="dashboard-modal-subtitle">Usuario: {username}</p>
+
+                <label className="dashboard-modal-label" htmlFor={`new-password-${username}`}>
+                  Nova senha
+                </label>
+                <input
+                  id={`new-password-${username}`}
+                  className="dashboard-modal-input"
+                  type="password"
+                  value={newPassword}
+                  minLength={3}
+                  onChange={(event) => {
+                    setNewPassword(event.target.value);
+                    if (passwordError) {
+                      setPasswordError(null);
+                    }
+                  }}
+                  disabled={isSubmitting}
+                />
+
+                {passwordError ? <p className="dashboard-modal-error">{passwordError}</p> : null}
+
+                <div className="dashboard-modal-actions">
+                  <button
+                    type="button"
+                    className="pagination-link"
+                    onClick={closePasswordModal}
+                    disabled={isSubmitting}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    className="auth-button"
+                    onClick={handleChangePassword}
+                    disabled={isSubmitting}
+                  >
+                    Confirmar
+                  </button>
+                </div>
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
+
+      {feedback
+        ? createPortal(
+            <div className={`dashboard-feedback dashboard-feedback--${feedback.type}`} role="status" aria-live="polite">
+              {feedback.message}
             </div>,
             document.body,
           )
