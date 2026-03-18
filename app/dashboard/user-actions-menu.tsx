@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useRouter } from "next/navigation";
 
 type UserActionsMenuProps = {
   username: string;
@@ -11,10 +12,51 @@ type UserActionsMenuProps = {
 type MenuPosition = { top: number; right: number };
 
 export default function UserActionsMenu({ username, enabled }: UserActionsMenuProps) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [menuPos, setMenuPos] = useState<MenuPosition | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  async function handleToggleStatus() {
+    if (!username || isSubmitting) {
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch(`/api/users/${encodeURIComponent(username)}/status`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ enabled: !enabled }),
+      });
+
+      if (!response.ok) {
+        const errorPayload: unknown = await response.json().catch(() => null);
+        const errorMessage =
+          typeof errorPayload === "object" &&
+          errorPayload !== null &&
+          "error" in errorPayload &&
+          typeof errorPayload.error === "string"
+            ? errorPayload.error
+            : "Nao foi possivel atualizar o status do usuario";
+
+        throw new Error(errorMessage);
+      }
+
+      setOpen(false);
+      router.refresh();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Erro ao atualizar status";
+      window.alert(message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
 
   function openMenu() {
     if (!triggerRef.current) return;
@@ -69,6 +111,7 @@ export default function UserActionsMenu({ username, enabled }: UserActionsMenuPr
         aria-expanded={open}
         aria-haspopup="menu"
         type="button"
+        disabled={!username || isSubmitting}
         onClick={() => (open ? setOpen(false) : openMenu())}
       >
         •••
@@ -86,9 +129,10 @@ export default function UserActionsMenu({ username, enabled }: UserActionsMenuPr
                 className={`user-actions-item ${enabled ? "action-block" : "action-unblock"}`}
                 role="menuitem"
                 type="button"
-                onClick={() => setOpen(false)}
+                disabled={isSubmitting}
+                onClick={handleToggleStatus}
               >
-                {enabled ? "Bloquear" : "Desbloquear"}
+                {isSubmitting ? "Processando..." : enabled ? "Bloquear" : "Desbloquear"}
               </button>
 
               <button

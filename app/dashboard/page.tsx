@@ -304,7 +304,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
                           </span>
                         </td>
                         <td className="user-actions-cell">
-                          <UserActionsMenu username={user.username || user.displayName} enabled={user.enabled} />
+                          <UserActionsMenu username={user.username} enabled={user.enabled} />
                         </td>
                       </tr>
                       );
