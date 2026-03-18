@@ -19,6 +19,17 @@ export default function UserActionsMenu({ username, enabled }: UserActionsMenuPr
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    if (!isSubmitting) {
+      return;
+    }
+
+    const activeElement = document.activeElement;
+    if (activeElement instanceof HTMLElement) {
+      activeElement.blur();
+    }
+  }, [isSubmitting]);
+
   async function handleToggleStatus() {
     if (!username || isSubmitting) {
       return;
@@ -116,6 +127,18 @@ export default function UserActionsMenu({ username, enabled }: UserActionsMenuPr
       >
         •••
       </button>
+
+      {isSubmitting
+        ? createPortal(
+            <div className="dashboard-blocking-overlay" role="status" aria-live="polite">
+              <div className="dashboard-blocking-card">
+                <span className="dashboard-blocking-spinner" aria-hidden="true" />
+                <span>Atualizando status do usuario...</span>
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
 
       {open && menuPos
         ? createPortal(

@@ -327,6 +327,39 @@ a {
   background: #eafbf1;
 }
 
+.dashboard-blocking-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: rgba(30, 43, 39, 0.28);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(2px);
+}
+
+.dashboard-blocking-card {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  background: #fffdf6;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  color: var(--text);
+  font-weight: 600;
+  box-shadow: 0 12px 28px rgba(17, 94, 89, 0.18);
+}
+
+.dashboard-blocking-spinner {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid #bfd8d5;
+  border-top-color: var(--brand);
+  animation: spin 0.8s linear infinite;
+}
+
 .status-pill {
   display: inline-flex;
   align-items: center;
@@ -394,6 +427,12 @@ a {
   }
   100% {
     background-position: 600px 0;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 
