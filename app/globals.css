@@ -87,6 +87,17 @@ a {
   outline-offset: 1px;
 }
 
+.auth-input:disabled {
+  background: #f0efe8;
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
+.auth-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
 .auth-button {
   border: none;
   border-radius: 12px;
@@ -265,6 +276,81 @@ a {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -600px 0;
+  }
+  100% {
+    background-position: 600px 0;
+  }
+}
+
+.skeleton {
+  border-radius: 8px;
+  background: linear-gradient(90deg, #e8e7df 25%, #f2f1e9 50%, #e8e7df 75%);
+  background-size: 600px 100%;
+  animation: shimmer 1.4s infinite linear;
+}
+
+.skeleton-header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.skeleton-title {
+  height: 2rem;
+  width: 180px;
+}
+
+.skeleton-subtitle {
+  height: 1rem;
+  width: 260px;
+}
+
+.skeleton-meta {
+  height: 0.85rem;
+  width: 200px;
+}
+
+.skeleton-button {
+  height: 2.6rem;
+  width: 72px;
+  border-radius: 12px;
+}
+
+.skeleton-search {
+  margin-top: 1.2rem;
+  height: 2.6rem;
+  border-radius: 12px;
+}
+
+.skeleton-cell {
+  height: 1rem;
+}
+
+.skeleton-cell--long {
+  width: 100%;
+  max-width: 200px;
+}
+
+.skeleton-cell--medium {
+  width: 100%;
+  max-width: 130px;
+}
+
+.skeleton-cell--short {
+  width: 60px;
+  border-radius: 999px;
+}
+
+.skeleton-cell--icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  margin: 0 auto;
 }
 
 @media (max-width: 640px) {

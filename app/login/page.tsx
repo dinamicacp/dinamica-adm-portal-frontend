@@ -1,6 +1,7 @@
 import { auth, signIn } from "@/auth";
 import { redirect } from "next/navigation";
 import { AuthError } from "next-auth";
+import LoginFormFields from "./login-form";
 
 type LoginPageProps = {
   searchParams: Promise<{ error?: string }>;
@@ -9,7 +10,7 @@ type LoginPageProps = {
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const session = await auth();
 
-  if (session) {
+  if (session && !session.error) {
     redirect("/dashboard");
   }
 
@@ -46,41 +47,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             }
           }}
         >
-          <div>
-            <label className="auth-label" htmlFor="username">
-              Usuario
-            </label>
-            <input
-              className="auth-input"
-              id="username"
-              name="username"
-              type="text"
-              placeholder="seu.usuario"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="auth-label" htmlFor="password">
-              Senha
-            </label>
-            <input
-              className="auth-input"
-              id="password"
-              name="password"
-              type="password"
-              placeholder="********"
-              required
-            />
-          </div>
-
-          {hasError ? (
-            <p className="auth-error">Credenciais inválidas. Tente novamente.</p>
-          ) : null}
-
-          <button className="auth-button" type="submit">
-            Entrar
-          </button>
+          <LoginFormFields hasError={hasError} />
         </form>
       </section>
     </main>
