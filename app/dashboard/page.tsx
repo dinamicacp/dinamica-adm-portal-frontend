@@ -1,11 +1,12 @@
 import { auth, signOut } from "@/auth";
+import ActiveSearch from "./active-search";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-const USERS_PAGE_SIZE = 20;
+const USERS_PAGE_SIZE = 10;
 
 type DashboardPageProps = {
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{ page?: string; q?: string }>;
 };
 
 type StudentUser = {
@@ -32,6 +33,45 @@ function parsePageParam(page?: string): number {
   }
 
   return parsed;
+}
+
+function normalizeSearchQuery(query?: string): string {
+  if (typeof query !== "string") {
+    return "";
+  }
+
+  return query.trim();
+}
+
+function filterUsersByQuery(users: StudentUser[], query: string): StudentUser[] {
+  const normalizedQuery = query.toLowerCase();
+
+  if (!normalizedQuery) {
+    return users;
+  }
+
+  return users.filter((user) => {
+    const firstName = user.firstName.toLowerCase();
+    const lastName = user.lastName.toLowerCase();
+    const displayName = user.displayName.toLowerCase();
+    const username = user.username.toLowerCase();
+
+    return (
+      firstName.includes(normalizedQuery) ||
+      lastName.includes(normalizedQuery) ||
+      displayName.includes(normalizedQuery) ||
+      username.includes(normalizedQuery)
+    );
+  });
+}
+
+function sortUsersByFirstName(users: StudentUser[]): StudentUser[] {
+  return [...users].sort((left, right) => {
+    const leftName = (left.firstName || left.displayName || "").trim();
+    const rightName = (right.firstName || right.displayName || "").trim();
+
+    return leftName.localeCompare(rightName, "pt-BR", { sensitivity: "base" });
+  });
 }
 
 function readStringField(record: Record<string, unknown>, ...keys: string[]): string {
@@ -147,6 +187,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   }
 
   const params = await searchParams;
+  const query = normalizeSearchQuery(params.q);
   const requestedPage = parsePageParam(params.page);
 
   let users: StudentUser[] = [];
@@ -158,14 +199,30 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     usersApiError = "Nao foi possivel carregar os usuarios no momento.";
   }
 
-  const totalUsers = users.length;
+  const orderedUsers = sortUsersByFirstName(users);
+  const filteredUsers = filterUsersByQuery(orderedUsers, query);
+
+  const totalUsers = filteredUsers.length;
   const totalPages = Math.max(1, Math.ceil(totalUsers / USERS_PAGE_SIZE));
   const currentPage = Math.min(requestedPage, totalPages);
   const startIndex = (currentPage - 1) * USERS_PAGE_SIZE;
   const endIndex = startIndex + USERS_PAGE_SIZE;
-  const usersFromCurrentPage = users.slice(startIndex, endIndex);
+  const usersFromCurrentPage = filteredUsers.slice(startIndex, endIndex);
 
-  const buildPageHref = (page: number) => (page === 1 ? "/dashboard" : `/dashboard?page=${page}`);
+  const buildPageHref = (page: number) => {
+    const href = new URLSearchParams();
+
+    if (page > 1) {
+      href.set("page", String(page));
+    }
+
+    if (query) {
+      href.set("q", query);
+    }
+
+    const queryString = href.toString();
+    return queryString ? `/dashboard?${queryString}` : "/dashboard";
+  };
 
   return (
     <main className="dashboard">
@@ -174,7 +231,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
           <div>
             <h1>Dashboard</h1>
             <p>
-              Sessao iniciada com <strong>{session.user.email}</strong>
+              Sessão iniciada com <strong>{session.user.name}</strong>
             </p>
             <p className="dashboard-meta">{totalUsers} usuarios encontrados no diretorio</p>
           </div>
@@ -195,6 +252,8 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
         {!usersApiError ? (
           <>
+            <ActiveSearch initialQuery={query} />
+
             <div className="dashboard-table-wrapper">
               <table className="dashboard-table">
                 <thead>
@@ -203,13 +262,11 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
                     <th>Sobrenome</th>
                     <th>Login</th>
                     <th>Status</th>
-                    <th>Email</th>
                   </tr>
                 </thead>
                 <tbody>
                   {usersFromCurrentPage.length > 0 ? (
                     usersFromCurrentPage.map((user, index) => {
-                      console.log("Renderizando usuario:", user);
                       const keyBase = user.id || user.username || user.email || "user";
 
                       return (
@@ -222,14 +279,15 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
                             {user.enabled ? "Ativo" : "Inativo"}
                           </span>
                         </td>
-                        <td className="dn-cell">{user.email || "-"}</td>
                       </tr>
                       );
                     })
                   ) : (
                     <tr>
-                      <td colSpan={5} className="dashboard-empty-state">
-                        Nenhum usuario retornado pela API.
+                      <td colSpan={4} className="dashboard-empty-state">
+                        {query
+                          ? "Nenhum usuario encontrado para o filtro informado."
+                          : "Nenhum usuario retornado pela API."}
                       </td>
                     </tr>
                   )}
