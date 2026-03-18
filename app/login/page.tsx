@@ -1,5 +1,6 @@
 import { auth, signIn } from "@/auth";
 import { redirect } from "next/navigation";
+import { AuthError } from "next-auth";
 
 type LoginPageProps = {
   searchParams: Promise<{ error?: string }>;
@@ -13,7 +14,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   }
 
   const params = await searchParams;
-  const hasError = params.error === "CredentialsSignin";
+  const hasError =
+    params.error === "CredentialsSignin" || params.error === "invalid_credentials";
 
   return (
     <main className="auth-page">
@@ -25,11 +27,23 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           className="auth-form"
           action={async (formData) => {
             "use server";
-            await signIn("credentials", {
-              username: formData.get("username"),
-              password: formData.get("password"),
-              redirectTo: "/dashboard",
-            });
+            try {
+              await signIn("credentials", {
+                username: formData.get("username"),
+                password: formData.get("password"),
+                redirectTo: "/dashboard",
+              });
+            } catch (error) {
+              if (error instanceof AuthError) {
+                if (error.type === "CredentialsSignin") {
+                  redirect("/login?error=invalid_credentials");
+                }
+
+                redirect("/login?error=auth_error");
+              }
+
+              throw error;
+            }
           }}
         >
           <div>
