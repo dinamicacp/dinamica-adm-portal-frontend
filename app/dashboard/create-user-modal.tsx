@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
+import { fetchWithAuth, SessionExpiredError } from "./fetch-with-auth";
 
 type CreateUserModalProps = {
   isOpen: boolean;
@@ -90,7 +91,7 @@ export default function CreateUserModal({ isOpen, onClose, onFeedback, organizat
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("/api/users", {
+      const response = await fetchWithAuth("/api/users", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -123,6 +124,10 @@ export default function CreateUserModal({ isOpen, onClose, onFeedback, organizat
         router.refresh();
       }, 700);
     } catch (error) {
+      if (error instanceof SessionExpiredError) {
+        router.push("/login");
+        return;
+      }
       const message = error instanceof Error ? error.message : "Erro ao criar usuário";
       onFeedback({ type: "error", message });
     } finally {
