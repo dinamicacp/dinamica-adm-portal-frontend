@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
+import { fetchWithAuth, SessionExpiredError } from "./fetch-with-auth";
 
 type UserActionsMenuProps = {
   username: string;
@@ -60,7 +61,7 @@ export default function UserActionsMenu({ username, enabled }: UserActionsMenuPr
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(`/api/users/${encodeURIComponent(username)}/status`, {
+      const response = await fetchWithAuth(`/api/users/${encodeURIComponent(username)}/status`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -90,6 +91,10 @@ export default function UserActionsMenu({ username, enabled }: UserActionsMenuPr
         router.refresh();
       }, 700);
     } catch (error) {
+      if (error instanceof SessionExpiredError) {
+        router.push("/login");
+        return;
+      }
       const message = error instanceof Error ? error.message : "Erro ao atualizar status";
       setFeedback({ type: "error", message });
     } finally {
@@ -131,7 +136,7 @@ export default function UserActionsMenu({ username, enabled }: UserActionsMenuPr
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(`/api/users/${encodeURIComponent(username)}/password`, {
+      const response = await fetchWithAuth(`/api/users/${encodeURIComponent(username)}/password`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -156,6 +161,10 @@ export default function UserActionsMenu({ username, enabled }: UserActionsMenuPr
       setNewPassword("");
       setFeedback({ type: "success", message: "Senha alterada com sucesso." });
     } catch (error) {
+      if (error instanceof SessionExpiredError) {
+        router.push("/login");
+        return;
+      }
       const message = error instanceof Error ? error.message : "Erro ao trocar senha";
       setPasswordError(message);
     } finally {
