@@ -1,6 +1,7 @@
 import { auth, signOut } from "@/auth";
 import ActiveSearch from "./active-search";
 import UserActionsMenu from "./user-actions-menu";
+import DashboardClient from "./dashboard-client";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -225,6 +226,8 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     return queryString ? `/dashboard?${queryString}` : "/dashboard";
   };
 
+  const targetOu = process.env.USERS_API_TARGET_OU ?? "Alunos";
+
   return (
     <main className="dashboard">
       <section className="dashboard-card">
@@ -243,11 +246,13 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
               await signOut({ redirectTo: "/login" });
             }}
           >
-            <button className="auth-button" type="submit">
+            <button className="create-user-button" type="submit">
               Sair
             </button>
           </form>
         </header>
+
+        <DashboardClient organizationalUnit={targetOu} />
 
         {usersApiError ? <p className="dashboard-error">{usersApiError}</p> : null}
 
