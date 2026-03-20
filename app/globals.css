@@ -106,6 +106,15 @@ a {
   font-weight: 700;
   padding: 0.78rem 1rem;
   cursor: pointer;
+  transition: filter 160ms ease;
+}
+
+.auth-button:hover:not(:disabled) {
+  filter: brightness(0.92);
+}
+
+.auth-button:active:not(:disabled) {
+  filter: brightness(0.86);
 }
 
 .create-user-button {
@@ -121,8 +130,10 @@ a {
 }
 
 .create-user-button:hover {
-  background: var(--brand);
-  color: #fff;
+  background: transparent;
+  color: var(--brand-2);
+  border: none;
+  outline: none;
 }
 
 .create-user-button:disabled {
