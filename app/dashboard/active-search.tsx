@@ -14,12 +14,18 @@ export default function ActiveSearch({ initialQuery }: ActiveSearchProps) {
   const [query, setQuery] = useState(initialQuery);
 
   useEffect(() => {
+    setQuery(initialQuery);
+  }, [initialQuery]);
+
+  useEffect(() => {
     const timeout = setTimeout(() => {
       const currentParams = new URLSearchParams(searchParams.toString());
       const currentQuery = (currentParams.get("q") ?? "").trim();
       const trimmed = query.trim();
 
-      if (trimmed === currentQuery && !currentParams.has("page")) {
+      // Only update the URL when the search term actually changes.
+      // This prevents pagination changes from being overwritten back to page 1.
+      if (trimmed === currentQuery) {
         return;
       }
 
