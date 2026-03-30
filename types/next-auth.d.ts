@@ -5,11 +5,13 @@ declare module "next-auth" {
     accessToken?: string;
     refreshToken?: string;
     accessTokenExpiresAt?: number | null;
+    organizationalUnit?: string;
   }
 
   interface Session {
     accessToken?: string;
-    error?: "RefreshAccessTokenError" | "MissingAccessToken";
+    organizationalUnit?: string;
+    error?: "RefreshAccessTokenError" | "MissingAccessToken" | "UnauthorizedOrganizationalUnit";
     user: {
       id: string;
     } & DefaultSession["user"];
@@ -22,6 +24,7 @@ declare module "next-auth/jwt" {
     accessToken?: string;
     refreshToken?: string;
     accessTokenExpiresAt?: number;
-    authError?: "RefreshAccessTokenError" | "MissingAccessToken";
+    organizationalUnit?: string;
+    authError?: "RefreshAccessTokenError" | "MissingAccessToken" | "UnauthorizedOrganizationalUnit";
   }
 }
