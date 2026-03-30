@@ -5,6 +5,7 @@ const authProviderBaseUrl = process.env.AUTH_PROVIDER_BASE_URL;
 const authProviderLoginPath = process.env.AUTH_PROVIDER_LOGIN_PATH ?? "/login";
 const authProviderRefreshPath = process.env.AUTH_PROVIDER_REFRESH_PATH ?? "/refresh";
 const tokenRefreshBufferSeconds = Number(process.env.AUTH_TOKEN_REFRESH_BUFFER_SECONDS ?? "60");
+const requiredOrganizationalUnit = process.env.AUTH_REQUIRED_ORGANIZATIONAL_UNIT ?? "Funcionarios";
 
 type JwtPayload = {
   exp?: number;
@@ -15,6 +16,45 @@ type AuthTokens = {
   refreshToken?: string;
   expiresIn?: number;
 };
+
+function parseOrganizationalUnit(body: unknown): string | null {
+  if (typeof body !== "object" || body === null) {
+    return null;
+  }
+
+  const record = body as Record<string, unknown>;
+
+  const directValue = record.organizationalUnit;
+
+  if (typeof directValue === "string" && directValue.trim().length > 0) {
+    return directValue.trim();
+  }
+
+  if (Array.isArray(directValue)) {
+    const first = directValue[0];
+
+    if (typeof first === "string" && first.trim().length > 0) {
+      return first.trim();
+    }
+  }
+
+  const userValue = record.user;
+
+  if (typeof userValue === "object" && userValue !== null) {
+    return parseOrganizationalUnit(userValue);
+  }
+
+  return null;
+}
+
+function isAllowedOrganizationalUnit(organizationalUnit: string | null): organizationalUnit is string {
+  return (
+    typeof organizationalUnit === "string" &&
+    organizationalUnit.localeCompare(requiredOrganizationalUnit, "pt-BR", {
+      sensitivity: "accent",
+    }) === 0
+  );
+}
 
 function decodeJwtPayload(jwt: string): JwtPayload | null {
   const parts = jwt.split(".");
@@ -98,7 +138,12 @@ function shouldRefreshToken(expiresAt: number | null): boolean {
 async function refreshAccessToken(
   _currentAccessToken: string,
   refreshToken?: string,
-): Promise<{ accessToken: string; accessTokenExpiresAt: number | null; refreshToken?: string } | null> {
+): Promise<{
+  accessToken: string;
+  accessTokenExpiresAt: number | null;
+  refreshToken?: string;
+  organizationalUnit: string | null;
+} | null> {
   if (!authProviderBaseUrl || !authProviderRefreshPath) {
     return null;
   }
@@ -135,6 +180,7 @@ async function refreshAccessToken(
     accessTokenExpiresAt:
       getExpiresAtFromExpiresIn(tokens.expiresIn) ?? getAccessTokenExpiresAt(tokens.accessToken),
     refreshToken: tokens.refreshToken,
+    organizationalUnit: parseOrganizationalUnit(body),
   };
 }
 
@@ -180,8 +226,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         const body: unknown = await response.json();
         const tokens = parseAuthTokens(body);
+        const organizationalUnit = parseOrganizationalUnit(body);
 
-        if (!tokens) {
+        if (!tokens || !isAllowedOrganizationalUnit(organizationalUnit)) {
           return null;
         }
 
@@ -193,6 +240,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           refreshToken: tokens.refreshToken,
           accessTokenExpiresAt:
             getExpiresAtFromExpiresIn(tokens.expiresIn) ?? getAccessTokenExpiresAt(tokens.accessToken),
+          organizationalUnit,
         };
       },
     }),
@@ -204,7 +252,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.accessToken = user.accessToken;
         token.refreshToken = user.refreshToken;
         token.accessTokenExpiresAt = user.accessTokenExpiresAt;
+        token.organizationalUnit = user.organizationalUnit;
         token.authError = undefined;
+        return token;
+      }
+
+      if (!isAllowedOrganizationalUnit(typeof token.organizationalUnit === "string" ? token.organizationalUnit : null)) {
+        token.authError = "UnauthorizedOrganizationalUnit";
+        token.accessToken = undefined;
+        token.refreshToken = undefined;
+        token.accessTokenExpiresAt = undefined;
+        token.organizationalUnit = undefined;
         return token;
       }
 
@@ -232,13 +290,24 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (!refreshed) {
         token.authError = "RefreshAccessTokenError";
         token.accessToken = undefined;
+        token.refreshToken = undefined;
         token.accessTokenExpiresAt = undefined;
+        return token;
+      }
+
+      if (!isAllowedOrganizationalUnit(refreshed.organizationalUnit)) {
+        token.authError = "UnauthorizedOrganizationalUnit";
+        token.accessToken = undefined;
+        token.refreshToken = undefined;
+        token.accessTokenExpiresAt = undefined;
+        token.organizationalUnit = undefined;
         return token;
       }
 
       token.accessToken = refreshed.accessToken;
       token.refreshToken = refreshed.refreshToken ?? currentRefreshToken;
       token.accessTokenExpiresAt = refreshed.accessTokenExpiresAt ?? undefined;
+      token.organizationalUnit = refreshed.organizationalUnit;
       token.authError = undefined;
 
       return token;
@@ -256,9 +325,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.accessToken = token.accessToken;
       }
 
+      if (typeof token.organizationalUnit === "string") {
+        session.organizationalUnit = token.organizationalUnit;
+      }
+
       if (
         token.authError === "MissingAccessToken" ||
-        token.authError === "RefreshAccessTokenError"
+        token.authError === "RefreshAccessTokenError" ||
+        token.authError === "UnauthorizedOrganizationalUnit"
       ) {
         session.error = token.authError;
       }
