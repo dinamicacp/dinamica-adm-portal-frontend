@@ -1,7 +1,10 @@
+import DashboardShell from "./dashboard-shell";
+
 export default function DashboardLoading() {
   return (
-    <main className="dashboard">
-      <section className="dashboard-card">
+    <DashboardShell>
+      <main className="dashboard">
+        <section className="dashboard-card">
         <header className="dashboard-header">
           <div className="skeleton-header-text">
             <div className="skeleton skeleton-title" />
@@ -35,7 +38,8 @@ export default function DashboardLoading() {
             </tbody>
           </table>
         </div>
-      </section>
-    </main>
+        </section>
+      </main>
+    </DashboardShell>
   );
 }
