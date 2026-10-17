@@ -3,6 +3,7 @@ import ActiveSearch from "../dashboard/active-search";
 import UserActionsMenu from "../dashboard/user-actions-menu";
 import DashboardClient from "../dashboard/dashboard-client";
 import DashboardShell from "../dashboard/dashboard-shell";
+import PortalPage from "../components/portal-page";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -231,22 +232,19 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
   return (
     <DashboardShell>
-      <main className="dashboard">
-        <section className="dashboard-card">
-        <header className="dashboard-header">
-          <div>
-            <h1>Cadastro de Alunos</h1>
-            <p className="dashboard-meta">{totalUsers} usuarios encontrados no diretorio</p>
-          </div>
-        </header>
+      <main className="dashboard portal-page">
+        <PortalPage
+          className="students-card"
+          eyebrow="Gestão acadêmica"
+          title="Cadastro de alunos"
+          description={`${totalUsers} usuários encontrados no diretório`}
+          actions={<DashboardClient organizationalUnit={targetOu} />}
+        >
+          {usersApiError ? <p className="dashboard-error">{usersApiError}</p> : null}
 
-        <DashboardClient organizationalUnit={targetOu} />
-
-        {usersApiError ? <p className="dashboard-error">{usersApiError}</p> : null}
-
-        {!usersApiError ? (
-          <>
-            <ActiveSearch initialQuery={query} />
+          {!usersApiError ? (
+            <>
+              <ActiveSearch initialQuery={query} />
 
             <div className="dashboard-pagination">
               {currentPage > 1 ? (
@@ -258,15 +256,15 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
               )}
 
               <span className="pagination-info">
-                Pagina {currentPage} de {totalPages}
+                Página {currentPage} de {totalPages}
               </span>
 
               {currentPage < totalPages ? (
                 <Link href={buildPageHref(currentPage + 1)} className="pagination-link">
-                  Proxima
+                  Próxima
                 </Link>
               ) : (
-                <span className="pagination-link disabled">Proxima</span>
+                <span className="pagination-link disabled">Próxima</span>
               )}
             </div>
 
@@ -325,20 +323,20 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
               )}
 
               <span className="pagination-info">
-                Pagina {currentPage} de {totalPages}
+                Página {currentPage} de {totalPages}
               </span>
 
               {currentPage < totalPages ? (
                 <Link href={buildPageHref(currentPage + 1)} className="pagination-link">
-                  Proxima
+                  Próxima
                 </Link>
               ) : (
-                <span className="pagination-link disabled">Proxima</span>
+                <span className="pagination-link disabled">Próxima</span>
               )}
             </div>
-          </>
-        ) : null}
-        </section>
+            </>
+          ) : null}
+        </PortalPage>
       </main>
     </DashboardShell>
   );
