@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import { logout } from "./actions";
 
@@ -17,6 +18,7 @@ function SidebarToggleIcon({ isCollapsed }: { isCollapsed: boolean }) {
 }
 
 export default function DashboardShell({ children }: DashboardShellProps) {
+  const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
@@ -65,11 +67,19 @@ export default function DashboardShell({ children }: DashboardShellProps) {
           <p className="sidebar-label">Gestão acadêmica</p>
           <Link
             href="/cadastro-alunos"
-            className="sidebar-link"
-            aria-current="page"
+            className={`sidebar-link sidebar-link--students${pathname === "/cadastro-alunos" ? " active" : ""}`}
+            aria-current={pathname === "/cadastro-alunos" ? "page" : undefined}
             title="Cadastro de alunos"
           >
             <span>Cadastro de alunos</span>
+          </Link>
+          <Link
+            href="/calendario-ano-letivo"
+            className={`sidebar-link sidebar-link--calendar${pathname === "/calendario-ano-letivo" ? " active" : ""}`}
+            aria-current={pathname === "/calendario-ano-letivo" ? "page" : undefined}
+            title="Calendário do ano letivo"
+          >
+            <span>Calendário letivo</span>
           </Link>
         </nav>
 

@@ -31,15 +31,13 @@ export default function DashboardClient({ organizationalUnit }: DashboardClientP
 
   return (
     <>
-      <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem", justifyContent: "flex-end" }}>
-        <button
-          onClick={() => setShowCreateUserModal(true)}
-          className="auth-button"
-          type="button"
-        >
-          Adicionar usuário
-        </button>
-      </div>
+      <button
+        onClick={() => setShowCreateUserModal(true)}
+        className="auth-button portal-page-primary-action"
+        type="button"
+      >
+        Adicionar usuário
+      </button>
 
       <CreateUserModal
         isOpen={showCreateUserModal}
