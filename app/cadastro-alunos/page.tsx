@@ -1,4 +1,5 @@
 import { auth } from "@/auth";
+import { getUsersApiUrl } from "@/lib/api-url";
 import ActiveSearch from "../dashboard/active-search";
 import UserActionsMenu from "../dashboard/user-actions-menu";
 import DashboardClient from "../dashboard/dashboard-client";
@@ -146,10 +147,8 @@ function belongsToStudentsOu(item: unknown, targetOu: string): boolean {
 }
 
 async function fetchStudentUsers(accessToken: string): Promise<StudentUser[]> {
-  const usersApiBaseUrl = process.env.USERS_API_BASE_URL ?? "http://localhost:9999";
-  const usersApiPath = process.env.USERS_API_PATH ?? "/users";
   const targetOu = process.env.USERS_API_TARGET_OU ?? "Alunos";
-  const usersUrlObject = new URL(usersApiPath, usersApiBaseUrl);
+  const usersUrlObject = getUsersApiUrl();
   usersUrlObject.searchParams.set("ou", targetOu);
   const usersUrl = usersUrlObject.toString();
 
