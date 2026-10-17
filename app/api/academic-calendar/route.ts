@@ -1,4 +1,5 @@
 import { auth } from "@/auth";
+import { getAcademicCalendarApiUrl } from "@/lib/api-url";
 import { NextRequest, NextResponse } from "next/server";
 
 const CALENDAR_EVENT_TYPES = ["HOLIDAY", "HOLIDAY_BRIDGE", "RECESS"] as const;
@@ -14,20 +15,6 @@ type SaveCalendarBody = {
 type DeleteCalendarBody = {
   dates?: unknown;
 };
-
-function normalizeApiPath(path: string): string {
-  const withLeadingSlash = path.startsWith("/") ? path : `/${path}`;
-  return withLeadingSlash.replace(/\/+$/, "");
-}
-
-function getCalendarApiUrl(path = ""): URL {
-  const apiBaseUrl = process.env.USERS_API_BASE_URL ?? "http://localhost:9999";
-  const calendarPath = normalizeApiPath(
-    process.env.ACADEMIC_CALENDAR_API_PATH ?? "/academic-calendar",
-  );
-
-  return new URL(`${calendarPath}${path}`, apiBaseUrl);
-}
 
 function readDates(value: unknown): string[] | null {
   if (
@@ -73,7 +60,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const upstreamUrl = getCalendarApiUrl();
+  const upstreamUrl = getAcademicCalendarApiUrl();
   upstreamUrl.searchParams.set("year", year);
 
   const response = await fetch(upstreamUrl, {
@@ -117,7 +104,7 @@ export async function PUT(request: NextRequest) {
 
   const description =
     typeof body.description === "string" ? body.description.trim() || null : null;
-  const response = await fetch(getCalendarApiUrl("/batch"), {
+  const response = await fetch(getAcademicCalendarApiUrl("/batch"), {
     method: "PUT",
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -147,7 +134,7 @@ export async function DELETE(request: NextRequest) {
     );
   }
 
-  const response = await fetch(getCalendarApiUrl("/batch"), {
+  const response = await fetch(getAcademicCalendarApiUrl("/batch"), {
     method: "DELETE",
     headers: {
       Authorization: `Bearer ${accessToken}`,

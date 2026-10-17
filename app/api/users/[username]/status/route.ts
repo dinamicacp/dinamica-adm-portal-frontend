@@ -1,4 +1,5 @@
 import { auth } from "@/auth";
+import { getUsersApiUrl } from "@/lib/api-url";
 import { NextRequest, NextResponse } from "next/server";
 
 type RouteContext = {
@@ -30,11 +31,6 @@ function extractEnabledValue(payload: unknown): boolean | null {
   return null;
 }
 
-function normalizeUsersApiPath(path: string): string {
-  const withLeadingSlash = path.startsWith("/") ? path : `/${path}`;
-  return withLeadingSlash.replace(/\/+$/, "");
-}
-
 export async function PATCH(request: NextRequest, context: RouteContext) {
   const session = await auth();
 
@@ -48,9 +44,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     return NextResponse.json({ success: false, error: "Username is required" }, { status: 400 });
   }
 
-  const usersApiBaseUrl = process.env.USERS_API_BASE_URL ?? "http://localhost:5454";
-  const usersApiPath = normalizeUsersApiPath(process.env.USERS_API_PATH ?? "/users");
-  const upstreamUrl = new URL(`${usersApiPath}/${encodeURIComponent(username)}/status`, usersApiBaseUrl);
+  const upstreamUrl = getUsersApiUrl(`/${encodeURIComponent(username)}/status`);
 
   const body: UserStatusRequestBody = await request.json().catch(() => ({}));
   const expectedEnabled = body.enabled;
@@ -86,7 +80,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     });
   }
 
-  const verifyUrl = new URL(`${usersApiPath}/${encodeURIComponent(username)}`, usersApiBaseUrl);
+  const verifyUrl = getUsersApiUrl(`/${encodeURIComponent(username)}`);
   const verifyResponse = await fetch(verifyUrl.toString(), {
     method: "GET",
     headers: {

@@ -1,4 +1,5 @@
 import { auth } from "@/auth";
+import { getUsersApiUrl } from "@/lib/api-url";
 import { NextRequest, NextResponse } from "next/server";
 
 type RouteContext = {
@@ -8,11 +9,6 @@ type RouteContext = {
 type PasswordRequestBody = {
   password?: unknown;
 };
-
-function normalizeUsersApiPath(path: string): string {
-  const withLeadingSlash = path.startsWith("/") ? path : `/${path}`;
-  return withLeadingSlash.replace(/\/+$/, "");
-}
 
 export async function PATCH(request: NextRequest, context: RouteContext) {
   const session = await auth();
@@ -40,9 +36,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     );
   }
 
-  const usersApiBaseUrl = process.env.USERS_API_BASE_URL ?? "http://localhost:5454";
-  const usersApiPath = normalizeUsersApiPath(process.env.USERS_API_PATH ?? "/users");
-  const upstreamUrl = new URL(`${usersApiPath}/${encodeURIComponent(username)}/password`, usersApiBaseUrl);
+  const upstreamUrl = getUsersApiUrl(`/${encodeURIComponent(username)}/password`);
 
   const response = await fetch(upstreamUrl.toString(), {
     method: "PATCH",

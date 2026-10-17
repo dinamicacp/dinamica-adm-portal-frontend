@@ -1,4 +1,5 @@
 import { auth } from "@/auth";
+import { getUsersApiUrl } from "@/lib/api-url";
 import { NextRequest, NextResponse } from "next/server";
 
 type CreateUserRequestBody = {
@@ -8,11 +9,6 @@ type CreateUserRequestBody = {
   password?: unknown;
   organizationalUnit?: unknown;
 };
-
-function normalizeUsersApiPath(path: string): string {
-  const withLeadingSlash = path.startsWith("/") ? path : `/${path}`;
-  return withLeadingSlash.replace(/\/+$/, "");
-}
 
 export async function POST(request: NextRequest) {
   const session = await auth();
@@ -56,9 +52,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const usersApiBaseUrl = process.env.USERS_API_BASE_URL ?? "http://localhost:5454";
-  const usersApiPath = normalizeUsersApiPath(process.env.USERS_API_PATH ?? "/users");
-  const upstreamUrl = new URL(usersApiPath, usersApiBaseUrl);
+  const upstreamUrl = getUsersApiUrl();
 
   const response = await fetch(upstreamUrl.toString(), {
     method: "POST",
