@@ -64,7 +64,7 @@ export default function DashboardShell({ children }: DashboardShellProps) {
         <nav className="sidebar-navigation">
           <p className="sidebar-label">Gestão acadêmica</p>
           <Link
-            href="/dashboard/cadastro-alunos"
+            href="/cadastro-alunos"
             className="sidebar-link"
             aria-current="page"
             title="Cadastro de alunos"

@@ -1,8 +1,8 @@
 import { auth } from "@/auth";
-import ActiveSearch from "../active-search";
-import UserActionsMenu from "../user-actions-menu";
-import DashboardClient from "../dashboard-client";
-import DashboardShell from "../dashboard-shell";
+import ActiveSearch from "../dashboard/active-search";
+import UserActionsMenu from "../dashboard/user-actions-menu";
+import DashboardClient from "../dashboard/dashboard-client";
+import DashboardShell from "../dashboard/dashboard-shell";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -224,7 +224,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     }
 
     const queryString = href.toString();
-    return queryString ? `/dashboard/cadastro-alunos?${queryString}` : "/dashboard/cadastro-alunos";
+    return queryString ? `/cadastro-alunos?${queryString}` : "/cadastro-alunos";
   };
 
   const targetOu = process.env.USERS_API_TARGET_OU ?? "Alunos";
